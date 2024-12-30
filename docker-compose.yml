@@ -1,0 +1,52 @@
+version: '3.8'
+services:
+  loginservice:
+    build:
+      context: ../LoginService
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:80
+      ASPNETCORE_ENVIRONMENT: Development
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+      # Update the connection string to point to your local SQL Server
+      ConnectionStrings__DefaultConnection: "Server=mssql;Database=LoginApp;Trusted_Connection=false;MultipleActiveResultSets=True;User Id=sa;Password=Str0ngPa$$w0rd;Encrypt=false;TrustServerCertificate=True;"
+    
+    networks:
+      - app-network
+    depends_on:
+      - mssql
+    restart: always
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server
+    container_name: loginappdb
+    hostname: mssql
+    environment:
+      SA_PASSWORD: Str0ngPa$$w0rd
+      ACCEPT_EULA: Y
+    volumes:
+      - sql_data:/var/opt/mssql
+      
+    networks:
+      - app-network
+    restart: unless-stopped
+    ports:
+      - "1411:1433" 
+
+  frontend:
+    build:
+      context: ../LoginApp
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    networks:
+      - app-network
+    restart: always
+
+networks:
+  app-network:
+    driver: bridge
+volumes:
+  sql_data: 
